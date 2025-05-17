@@ -1,19 +1,19 @@
-;;; flycheck-ruff.el --- Support ruff in flycheck
+;;; flycheck-astral.el --- Support ruff and ty in flycheck
 
 ;; Copyright (C) 2025 Jacob Wilkins <jacob.wilkins@stfc.ac.uk>
 ;;
 ;; Author: Jacob Wilkins <jacob.wilkins@stfc.ac.uk>
-;; Created: 20 January 2025
+;; Created: 17 May 2025
 ;; Version: 1.0
 ;; Package-Requires: ((flycheck "0.18"))
 ;; Modified from https://github.com/flycheck/flycheck/issues/1974#issuecomment-1343495202
 
 ;;; Commentary:
 
-;; This package adds support for castep-linter to flycheck.  To use it, add
+;; This package adds support for ruff and ty to flycheck.  To use it, add
 ;; to your init.el:
 
-;; (require 'flycheck-ruff)
+;; (require 'flycheck-astral)
 ;; (add-hook 'python-mode-hook 'flycheck-mode)
 
 ;;; License:
@@ -68,8 +68,40 @@ See URL `http://pypi.python.org/pypi/ruff'."
    )
   :modes (python-mode python-ts-mode))
 
+
+(flycheck-define-checker python-ty
+  "A Python syntax and style checker using the ty utility.
+To override the path to the ty executable, set
+`flycheck-python-ty-executable'.
+See URL `http://pypi.python.org/pypi/ty'."
+  :command ("ty" "check"
+            "--output-format=concise"
+            (eval (when buffer-file-name
+                    (buffer-file-name)))
+            )
+  :standard-input t
+  :error-filter (lambda (errors)
+                  (let ((errors (flycheck-sanitize-errors errors)))
+                    (seq-map #'flycheck-flake8-fix-error-level errors)))
+  :error-patterns
+  (
+   (error line-start
+          "error[" (id (one-or-more (any alpha "-"))) "] "
+          (file-name) ":" line ":" (optional column ":") " "
+          (message (one-or-more not-newline))
+          line-end)
+   (warning line-start
+          "warning[" (id (one-or-more (any alpha "-"))) "] "
+          (file-name) ":" line ":" (optional column ":") " "
+          (message (one-or-more not-newline))
+          line-end)
+   )
+  :modes (python-mode python-ts-mode))
+
 (add-to-list 'flycheck-checkers 'python-ruff)
+(add-to-list 'flycheck-checkers 'python-ty)
 (flycheck-add-next-checker 'python-ruff 'python-ty)
 
+(provide 'flycheck-ty)
 (provide 'flycheck-ruff)
-;;; flycheck-ruff.el ends here
+;;; flycheck-astral.el ends here

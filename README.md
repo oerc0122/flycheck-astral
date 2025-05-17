@@ -18,8 +18,7 @@ python3 -m pip install ruff ty
 Add
 
 ```elisp
-(load-file "/path/to/flycheck-astral/flycheck-ty.el")
-(load-file "/path/to/flycheck-astral/flycheck-ruff.el")
+(load-file "/path/to/flycheck-astral/flycheck-astral.el")
 (add-hook 'python-mode-hook 'flycheck-mode)
 (add-hook 'python-ts-mode-hook 'flycheck-mode)
 ```
