@@ -39,7 +39,35 @@
 ;;; Code:
 (require 'flycheck)
 
-(flycheck-define-checker python-ruff
+
+(flycheck-define-checker python-ty
+  "A Python syntax and style checker using the ty utility.
+To override the path to the ty executable, set
+`flycheck-python-ty-executable'.
+See URL `http://pypi.python.org/pypi/ty'."
+  :command ("ty" "check" "--output-format=concise" source)
+  :error-filter (lambda (errors)
+                  (let ((errors (flycheck-sanitize-errors errors)))
+                    (seq-map #'flycheck-flake8-fix-error-level errors)))
+  :error-patterns
+  (
+   (error line-start
+          "error[" (id (one-or-more (any alpha "-"))) "] "
+          (file-name) ":" line ":" (optional column ":") " "
+          (message (one-or-more not-newline))
+          line-end)
+   (warning line-start
+          "warning[" (id (one-or-more (any alpha "-"))) "] "
+          (file-name) ":" line ":" (optional column ":") " "
+          (message (one-or-more not-newline))
+          line-end)
+   )
+  :predicate (lambda () (buffer-file-name))
+
+  :modes (python-mode python-ts-mode))
+
+
+(flycheck-define-checker python-ruff-cust
   "A Python syntax and style checker using the ruff utility.
 To override the path to the ruff executable, set
 `flycheck-python-ruff-executable'.
@@ -66,42 +94,19 @@ See URL `http://pypi.python.org/pypi/ruff'."
             (message (one-or-more not-newline))
             line-end)
    )
-  :modes (python-mode python-ts-mode))
+  :next-checkers ((t . python-ty))
+  :modes (python-mode python-ts-mode)
+
+  :error-explainer
+  (lambda (err)
+    (let ((error-code (flycheck-error-id err))
+          (url "https://docs.astral.sh/ruff/rules/"))
+      (and error-code `(url . ,(concat url error-code)))))
+  )
 
 
-(flycheck-define-checker python-ty
-  "A Python syntax and style checker using the ty utility.
-To override the path to the ty executable, set
-`flycheck-python-ty-executable'.
-See URL `http://pypi.python.org/pypi/ty'."
-  :command ("ty" "check"
-            "--output-format=concise"
-            (eval (when buffer-file-name
-                    (buffer-file-name)))
-            )
-  :standard-input t
-  :error-filter (lambda (errors)
-                  (let ((errors (flycheck-sanitize-errors errors)))
-                    (seq-map #'flycheck-flake8-fix-error-level errors)))
-  :error-patterns
-  (
-   (error line-start
-          "error[" (id (one-or-more (any alpha "-"))) "] "
-          (file-name) ":" line ":" (optional column ":") " "
-          (message (one-or-more not-newline))
-          line-end)
-   (warning line-start
-          "warning[" (id (one-or-more (any alpha "-"))) "] "
-          (file-name) ":" line ":" (optional column ":") " "
-          (message (one-or-more not-newline))
-          line-end)
-   )
-  :modes (python-mode python-ts-mode))
-
-(add-to-list 'flycheck-checkers 'python-ruff)
 (add-to-list 'flycheck-checkers 'python-ty)
-(flycheck-add-next-checker 'python-ruff 'python-ty)
+(add-to-list 'flycheck-checkers 'python-ruff-cust)
 
-(provide 'flycheck-ty)
-(provide 'flycheck-ruff)
+(provide 'flycheck-astral)
 ;;; flycheck-astral.el ends here
