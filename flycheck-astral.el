@@ -73,7 +73,15 @@ See URL `http://pypi.python.org/pypi/ty'."
    )
   :predicate (lambda () (buffer-file-name))
 
-  :modes (python-mode python-ts-mode))
+  :modes (python-mode python-ts-mode)
+
+  :error-explainer
+  (lambda (err)
+    (let ((error-code (flycheck-error-id err))
+          (url "https://github.com/astral-sh/ty/blob/main/docs/reference/rules.md#"))
+      (and error-code `(url . ,(concat url error-code)))))
+
+  )
 
 
 (flycheck-define-checker python-ruff-cust
