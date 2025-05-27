@@ -39,13 +39,22 @@
 ;;; Code:
 (require 'flycheck)
 
+(defcustom ty-custom-python ""
+  "Location of custom Python for e.g. pyenv."
+  :type 'string
+  :get (lambda (symb) (if (not (string-empty-p symb)) (expand-file-name symb)))
+  )
 
 (flycheck-define-checker python-ty
   "A Python syntax and style checker using the ty utility.
 To override the path to the ty executable, set
 `flycheck-python-ty-executable'.
 See URL `http://pypi.python.org/pypi/ty'."
-  :command ("ty" "check" "--output-format=concise" source)
+  :command ("ty"
+            "check"
+            "--output-format" "concise"
+            (option "--python" ty-custom-python)
+            source)
   :error-filter (lambda (errors)
                   (let ((errors (flycheck-sanitize-errors errors)))
                     (seq-map #'flycheck-flake8-fix-error-level errors)))
