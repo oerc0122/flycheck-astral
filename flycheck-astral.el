@@ -70,6 +70,11 @@ See URL `http://pypi.python.org/pypi/ty'."
           (file-name) ":" line ":" (optional column ":") " "
           (message (one-or-more not-newline))
           line-end)
+   (info line-start
+          "info[" (id (one-or-more (any alpha "-"))) "] "
+          (file-name) ":" line ":" (optional column ":") " "
+          (message (one-or-more not-newline))
+          line-end)
    )
   :predicate (lambda () (buffer-file-name))
 
